@@ -8,19 +8,19 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 5000;
 
- 
 const corsOptions = {
-  origin: "https://naeem-portfolio-two.vercel.app",   
+  origin: "https://naeem-portfolio-two.vercel.app",  // Your frontend domain
   methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 
 // Middleware
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); 
+app.options("*", cors(corsOptions));  // Preflight support
 app.use(express.json());
 
-const emailTrnasporter = nodemailer.createTransport({
+// Create nodemailer transporter
+const emailTransporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
     user: process.env.PROFILE_EMAIL,
@@ -28,9 +28,14 @@ const emailTrnasporter = nodemailer.createTransport({
   },
 });
 
-// email route
+// Email sending route
 app.post("/sendEmail", async (req, res) => {
   const { name, subject, description } = req.body;
+
+  // Basic validation
+  if (!name || !subject || !description) {
+    return res.status(400).send({ result: "error", message: "Missing required fields" });
+  }
 
   const emailObj = {
     from: `Portfolio Message from ${name} <${process.env.PROFILE_EMAIL}>`,
@@ -45,15 +50,15 @@ app.post("/sendEmail", async (req, res) => {
   };
 
   try {
-    await emailTrnasporter.sendMail(emailObj);
+    await emailTransporter.sendMail(emailObj);
     res.send({ result: "success" });
   } catch (err) {
-    console.error("email sender error", err);
-    res.status(500).send({ result: "error" });
+    console.error("Email sending error:", err);
+    res.status(500).send({ result: "error", message: "Failed to send email" });
   }
 });
 
-// test route
+// Test route
 app.get("/", (req, res) => {
   res.send("Backend is running...");
 });
