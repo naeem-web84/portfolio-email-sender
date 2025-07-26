@@ -8,23 +8,30 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 5000;
 
-// CORS options for your frontend domain
+// ✅ Allow listed domains for CORS
+const allowedOrigins = [
+  "https://naeem-portfolio-two.vercel.app", // your frontend
+  "http://localhost:5173", // for local development (optional)
+];
+
 const corsOptions = {
-  origin: "https://naeem-portfolio-two.vercel.app", // your frontend URL here
-  methods: ["GET", "POST", "OPTIONS"],
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
 };
 
-// Apply CORS middleware BEFORE routes
+// ✅ Apply CORS before all routes
 app.use(cors(corsOptions));
-
-// Handle preflight OPTIONS requests for all routes
-app.options("*", cors(corsOptions));
-
-// Body parser middleware
 app.use(express.json());
 
-// Nodemailer setup
+// ✅ Nodemailer configuration
 const emailTransporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -33,11 +40,15 @@ const emailTransporter = nodemailer.createTransport({
   },
 });
 
-// POST /sendEmail route
+// ✅ Email sending route
 app.post("/sendEmail", async (req, res) => {
   const { name, subject, description } = req.body;
 
-  const emailObj = {
+  if (!name || !subject || !description) {
+    return res.status(400).json({ result: "error", message: "Missing fields" });
+  }
+
+  const mailOptions = {
     from: `Portfolio Message from ${name} <${process.env.PROFILE_EMAIL}>`,
     to: process.env.EMAIL_GETTER,
     subject,
@@ -50,20 +61,20 @@ app.post("/sendEmail", async (req, res) => {
   };
 
   try {
-    await emailTransporter.sendMail(emailObj);
-    res.json({ result: "success" });
+    await emailTransporter.sendMail(mailOptions);
+    res.json({ result: "success", message: "Email sent successfully" });
   } catch (error) {
-    console.error("Email sender error:", error);
-    res.status(500).json({ result: "error" });
+    console.error("Email sending failed:", error);
+    res.status(500).json({ result: "error", message: "Email failed to send" });
   }
 });
 
-// Test route
+// ✅ Root route for testing
 app.get("/", (req, res) => {
-  res.send("Backend is running...");
+  res.send("Backend is running and ready to send emails!");
 });
 
-// Start server
+// ✅ Start the server
 app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+  console.log(`Server is running on port ${port}`);
 });
