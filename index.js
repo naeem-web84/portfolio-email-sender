@@ -73,6 +73,6 @@ app.get("/", (req, res) => {
   res.send("Email sender backend running 🚀");
 });
 
-app.listen(port, () => {
-  console.log(`✅ Server running at http://localhost:${port}`);
-});
+// app.listen(port, () => {
+//   console.log(`✅ Server running at http://localhost:${port}`);
+// });
