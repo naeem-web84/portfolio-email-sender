@@ -8,10 +8,10 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 5000;
 
-// ✅ Allow listed domains for CORS
+// ✅ Allow-listed domains
 const allowedOrigins = [
-  "https://naeem-portfolio-two.vercel.app", // your frontend
-  "http://localhost:5173", // for local development (optional)
+  "https://naeem-portfolio-two.vercel.app",
+  "http://localhost:5173",
 ];
 
 const corsOptions = {
@@ -22,31 +22,30 @@ const corsOptions = {
       callback(new Error("Not allowed by CORS"));
     }
   },
-  methods: ["GET", "POST"],
+  methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 };
 
-// ✅ Apply CORS before all routes
+// ✅ Middleware (order matters!)
 app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // ✅ handles preflight
 app.use(express.json());
 
-// ✅ Nodemailer configuration
-const emailTransporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.PROFILE_EMAIL,
-    pass: process.env.PROFILE_EMAIL_PASS,
-  },
-});
-
-// ✅ Email sending route
+// ✅ POST route
 app.post("/sendEmail", async (req, res) => {
   const { name, subject, description } = req.body;
-
   if (!name || !subject || !description) {
     return res.status(400).json({ result: "error", message: "Missing fields" });
   }
+
+  const emailTransporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.PROFILE_EMAIL,
+      pass: process.env.PROFILE_EMAIL_PASS,
+    },
+  });
 
   const mailOptions = {
     from: `Portfolio Message from ${name} <${process.env.PROFILE_EMAIL}>`,
@@ -69,12 +68,11 @@ app.post("/sendEmail", async (req, res) => {
   }
 });
 
-// ✅ Root route for testing
+// ✅ Root test route
 app.get("/", (req, res) => {
-  res.send("Backend is running and ready to send emails!");
+  res.send("Email sender backend running 🚀");
 });
 
-// ✅ Start the server
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  console.log(`✅ Server running at http://localhost:${port}`);
 });
